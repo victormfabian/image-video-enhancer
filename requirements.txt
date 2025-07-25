@@ -5,3 +5,4 @@ torch==2.0.1
 realesrgan==0.3.0
 basicsr==1.4.2
 opencv-python-headless==4.7.0.72
+
