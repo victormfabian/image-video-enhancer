@@ -68,7 +68,7 @@ if mode == "Image":
 else:
     uploaded_video = st.file_uploader("Upload a Video", type=["mp4", "mov", "avi"])
     if uploaded_video:
-        tfile = tempfile.NamedTemporaryFile(delete=False)
+        tfile = tempfile.NamedTemporaryFile(delete=False, suffix=".mp4")
         tfile.write(uploaded_video.read())
         video_path = tfile.name
 
@@ -83,16 +83,19 @@ else:
                 width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
+                output_path = video_path.replace(".mp4", f"_enhanced_x{scale}.mp4")
                 fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-                output_path = video_path.replace(".", f"_enhanced_x{scale}.")
                 out = cv2.VideoWriter(output_path, fourcc, fps, (width * scale, height * scale))
 
                 while True:
                     ret, frame = cap.read()
                     if not ret:
                         break
-                    enhanced_frame, _ = upsampler.enhance(frame, outscale=scale)
-                    out.write(enhanced_frame)
+                    try:
+                        enhanced_frame, _ = upsampler.enhance(frame, outscale=scale)
+                        out.write(enhanced_frame)
+                    except Exception as e:
+                        st.error(f"Frame skipped due to error: {e}")
 
                 cap.release()
                 out.release()
@@ -101,6 +104,6 @@ else:
                 st.download_button(
                     label="Download Enhanced Video",
                     data=f,
-                    file_name=f"enhanced_x{scale}.mp4",
+                    file_name=os.path.basename(output_path),
                     mime="video/mp4"
                 )
