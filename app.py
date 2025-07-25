@@ -12,18 +12,17 @@ import os
 st.set_page_config(page_title="🔍 Image & Video Enhancer", layout="wide")
 st.title("🔍 High-Quality Image & Video Enhancer")
 
-# Load model with local cache
+# Load model with local-only check
 @st.cache_resource
 def load_model(scale):
     model_name = f"RealESRGAN_x{scale}plus.pth"
-    model_url = f"https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5/{model_name}"
-    model_dir = os.path.join(os.path.expanduser("~"), ".cache", "realesrgan")
+    model_dir = os.path.join("models")  # Use local models directory
     os.makedirs(model_dir, exist_ok=True)
     model_path = os.path.join(model_dir, model_name)
 
     if not os.path.exists(model_path):
-        from urllib.request import urlretrieve
-        urlretrieve(model_url, model_path)
+        st.error(f"Model file not found at:\n{model_path}\n\nPlease download it manually from:\nhttps://github.com/xinntao/Real-ESRGAN/releases and place it in the 'models' folder.")
+        st.stop()
 
     model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=scale)
     upsampler = RealESRGANer(
@@ -46,14 +45,14 @@ if mode == "Image":
         image = Image.open(uploaded_file).convert("RGB")
         img_np = np.array(image)
 
-        st.image(image, caption="Original")
+        st.image(image, caption="Original", use_container_width=True)
 
         with st.spinner("Enhancing image..."):
             upsampler = load_model(scale)
             output, _ = upsampler.enhance(img_np, outscale=scale)
             result_img = Image.fromarray(output)
 
-        st.image(result_img, caption=f"Enhanced x{scale}")
+        st.image(result_img, caption=f"Enhanced x{scale}", use_container_width=True)
 
         img_bytes = io.BytesIO()
         result_img.save(img_bytes, format="PNG")
